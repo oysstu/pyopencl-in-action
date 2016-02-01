@@ -22,6 +22,6 @@ def get_default_device() -> cl.Device:
             print('Using CPU: {}\n'.format(dev.name))
             return dev
         else:
-            print('No suitable OpenCL GPU/CPU devices found')
+            raise RuntimeError('No suitable OpenCL GPU/CPU devices found')
 
 
