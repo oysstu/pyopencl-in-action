@@ -26,7 +26,7 @@ for plat in platforms:
     devices = plat.get_devices(cl.device_type.ALL)
 
     print(indent + 'Available devices: ')
-    if len(devices) == 0:
+    if not devices:
         print(indent + '\tNone')
 
     for dev in devices:
