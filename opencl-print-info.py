@@ -1,5 +1,6 @@
 '''
 Prints relevant information regarding the capabilities of the current OpenCL runtime and devices
+Note that pyopencl has a script that prints all properties in its examples folder
 '''
 
 import pyopencl as cl
@@ -33,19 +34,21 @@ for plat in platforms:
         print(indent + '{} ({})'.format(dev.name, dev.vendor))
 
         indent = '\t\t\t'
-        print(indent + 'Version: ' + dev.version)
-        print(indent + 'Type: ' + cl.device_type.to_string(dev.type))
-        print(indent + 'Extensions: ' + str(dev.extensions.strip().split(' ')))
-        print(indent + 'Memory (global): ' + str(dev.global_mem_size))
-        print(indent + 'Memory (local): ' + str(dev.local_mem_size))
-        print(indent + 'Address bits: ' + str(dev.address_bits))
-        print(indent + 'Max work item dims: ' + str(dev.max_work_item_dimensions))
-        print(indent + 'Max work group size: ' + str(dev.max_work_group_size))
-        print(indent + 'Max compute units: ' + str(dev.max_compute_units))
-        print(indent + 'Driver version: ' + dev.driver_version)
-        print(indent + 'Little endian: ' + str(bool(dev.endian_little)))
-        print(indent + 'Device available: ' + str(bool(dev.available)))
-        print(indent + 'Compiler available: ' + str(bool(dev.compiler_available)))
+        flags = [('Version', dev.version),
+                 ('Type', cl.device_type.to_string(dev.type)),
+                 ('Extensions', str(dev.extensions.strip().split(' '))),
+                 ('Memory (global)', str(dev.global_mem_size)),
+                 ('Memory (local)', str(dev.local_mem_size)),
+                 ('Address bits', str(dev.address_bits)),
+                 ('Max work item dims', str(dev.max_work_item_dimensions)),
+                 ('Max work group size', str(dev.max_work_group_size)),
+                 ('Max compute units', str(dev.max_compute_units)),
+                 ('Driver version', dev.driver_version),
+                 ('Little endian', str(bool(dev.endian_little))),
+                 ('Device available', str(bool(dev.available))),
+                 ('Compiler available', str(bool(dev.compiler_available)))]
+
+        [print(indent + '{0:<25}{1:<10}'.format(name + ':', flag)) for name, flag in flags]
 
         # Device version string has the following syntax, extract the number like this
         # OpenCL<space><major_version.minor_version><space><vendor-specific information>
