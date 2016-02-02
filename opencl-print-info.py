@@ -44,6 +44,7 @@ for plat in platforms:
                  ('Max work group size', str(dev.max_work_group_size)),
                  ('Max compute units', str(dev.max_compute_units)),
                  ('Driver version', dev.driver_version),
+                 ('Image support', str(bool(dev.image_support))),
                  ('Little endian', str(bool(dev.endian_little))),
                  ('Device available', str(bool(dev.available))),
                  ('Compiler available', str(bool(dev.compiler_available)))]
