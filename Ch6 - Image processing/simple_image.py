@@ -1,10 +1,9 @@
 '''
-Listing 5.6: Shuffling vector components
+Listing 6.1: Simple image processing
 '''
 
 import numpy as np
 import pyopencl as cl
-import pyopencl.array
 import matplotlib.pyplot as plt
 import utility
 
@@ -52,14 +51,16 @@ src_buff = cl.image_from_array(context, im_src, mode='r')
 dst_buff = cl.image_from_array(context, im_dst, mode='w')
 
 # Enqueue kernel (with argument specified directly)
-global_size = im_src.shape
+# Note: Global indices is reversed due to OpenCL using column-major order when reading images
+global_size = im_src.shape[::-1]
 local_size = None
 
 # __call__(queue, global_size, local_size, *args, global_offset=None, wait_for=None, g_times_l=False)
 prog.simple_image(queue, global_size, local_size, src_buff, dst_buff)
 
 # Enqueue command to copy from buffers to host memory
-cl.enqueue_copy(queue, dest=im_dst, src=dst_buff, is_blocking=True, origin=(0, 0), region=im_src.shape)
+# Note: Region indices is reversed due to OpenCL using column-major order when reading images
+cl.enqueue_copy(queue, dest=im_dst, src=dst_buff, is_blocking=True, origin=(0, 0), region=im_src.shape[::-1])
 
 fig, (ax1, ax2) = plt.subplots(1, 2)
 ax1.imshow(im_src, cmap='gray', vmin=0, vmax=np.iinfo(np.uint16).max)
