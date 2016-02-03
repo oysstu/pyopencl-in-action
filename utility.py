@@ -2,7 +2,7 @@ import pyopencl as cl
 from operator import attrgetter
 
 
-def get_default_device() -> cl.Device:
+def get_default_device(use_gpu=True) -> cl.Device:
     '''
     Retrieves the GPU device with the most global memory if available, otherwise returns the CPU.
     '''
@@ -10,7 +10,7 @@ def get_default_device() -> cl.Device:
     gpu_devices = [plat.get_devices(cl.device_type.GPU) for plat in platforms]
     gpu_devices = [dev for devices in gpu_devices for dev in devices]  # Flatten to 1d if multiple GPU devices exists
 
-    if gpu_devices:
+    if gpu_devices and use_gpu:
         dev = max(gpu_devices, key=attrgetter('global_mem_size'))
         print('Using GPU: {}\n'.format(dev.name))
         return dev
