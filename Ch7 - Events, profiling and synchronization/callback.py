@@ -8,6 +8,12 @@ Listing 7.2: Host notification
 import numpy as np
 import pyopencl as cl
 import utility
+from time import sleep
+from platform import system
+
+# Check for windows
+if system() is 'Windows':
+    print('Warning: This script uses functionality currently not available in pyopencl on windows.')
 
 kernel_src = '''
 __kernel void callback(__global float *buffer) {
@@ -19,15 +25,8 @@ __kernel void callback(__global float *buffer) {
 }
 '''
 
-# Define callback functions
-def kernel_complete(status):
-    print('kernel complete')
-
-def read_complete(status):
-    print('read complete')
-
 # Get device and context, create command queue and program
-dev = utility.get_default_device(use_gpu=False)
+dev = utility.get_default_device()
 context = cl.Context(devices=[dev], properties=None, dev_type=None, cache_dir=None)
 queue = cl.CommandQueue(context, dev)
 
@@ -51,16 +50,36 @@ out_buff = cl.Buffer(context, cl.mem_flags.WRITE_ONLY, size=out.nbytes)
 global_size = (1,)
 local_size = None
 
+
+# Define callback functions
+def kernel_complete(status):
+    print('Kernel complete')
+
+def read_complete(status):
+    print('Read complete')
+
 # __call__(queue, global_size, local_size, *args, global_offset=None, wait_for=None, g_times_l=False)
 # Store kernel execution event (return value)
 kernel_event = prog.callback(queue, global_size, local_size, out_buff)
 kernel_event.set_callback(cl.command_execution_status.COMPLETE, kernel_complete)
 
+print('Kernel enqueued')
+
 # Enqueue command to copy from buffers to host memory
 # Store data transfer event (return value)
 read_event = cl.enqueue_copy(queue, dest=out, src=out_buff, is_blocking=False)
-print(read_event)
 read_event.set_callback(cl.command_execution_status.COMPLETE, read_complete)
 
-print('Script completion')
+print('Read enqueued')
+
+# Allow the callback functions to finish
+read_event.wait()
+
+# The callback function might not execute if the script terminates too quickly
+sleep(1)
+
+# If this is placed before the sleep function, it is sometimes executed before "read complete" is printed
+print('Output: ' + str(out))
+
+
 
