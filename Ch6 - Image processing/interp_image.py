@@ -1,21 +1,22 @@
 '''
 Listing 6.2: Image interpolation
+Note: The book uses nearest neighbour filtering, bilinear filtering is used here instead
 '''
 
 import numpy as np
 import pyopencl as cl
-import pyopencl.array
 import matplotlib.pyplot as plt
 from skimage.io import imread
 import utility
 
-from os import environ
-environ['PYOPENCL_COMPILER_OUTPUT'] = '0'
+# Note: This enables error output from the intel compiler if uncommented
+# from os import environ
+# environ['PYOPENCL_COMPILER_OUTPUT'] = '1'
 
 scale_factor = 5
 
 kernel_src = '''
-__constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+__constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP | CLK_FILTER_LINEAR;
 
 __kernel void interp(read_only image2d_t src_image,
                      write_only image2d_t dst_image) {
@@ -53,8 +54,7 @@ queue = cl.CommandQueue(context, dev, properties=cl.command_queue_properties.PRO
 # Build program in the specified context using the kernel source code
 prog = cl.Program(context, kernel_src)
 try:
-    #'-Werror'
-    prog.build(options=['-DSCALE={}'.format(scale_factor)], devices=[dev], cache_dir=None)
+    prog.build(options=['-Werror', '-DSCALE={}'.format(scale_factor)], devices=[dev], cache_dir=None)
 except:
     print('Build log:')
     print(prog.get_build_info(dev, cl.program_build_info.LOG))
