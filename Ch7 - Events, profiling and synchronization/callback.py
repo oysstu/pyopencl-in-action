@@ -1,8 +1,5 @@
 '''
 Listing 7.2: Host notification
-# Note: This does not work on windows, as PYOPENCL_HAVE_EVENT_SET_CALLBACK is not defined.
-# This is possible due to os.fork() not being available on windows, or problems with GIL.
-# Events can still be used to synchronize through the wait_for and Event.wait() constructs.
 '''
 
 import numpy as np
@@ -10,10 +7,6 @@ import pyopencl as cl
 import utility
 from time import sleep
 from platform import system
-
-# Check for windows
-if system() is 'Windows':
-    print('Warning: This script uses functionality currently not available in pyopencl on windows.')
 
 kernel_src = '''
 __kernel void callback(__global float *buffer) {
