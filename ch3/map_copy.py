@@ -14,7 +14,7 @@ __kernel void blank(__global float *a, __global float *b) {
 # Get device and context, create command queue and program
 dev = utility.get_default_device()
 context = cl.Context(devices=[dev], properties=None, dev_type=None, cache_dir=None)
-queue = cl.CommandQueue(context, dev, properties=cl.command_queue_properties.PROFILING_ENABLE)
+queue = cl.CommandQueue(context, dev, properties=None)
 prog = cl.Program(context, kernel_src)
 
 try:
@@ -25,7 +25,6 @@ except:
 
 data_one = np.arange(start=0, stop=100, step=1, dtype=np.float32)
 data_two = -np.arange(start=0, stop=100, step=1, dtype=np.float32)
-result_array = np.zeros(shape=(100,), dtype=np.float32)
 
 # Create buffers
 flags = cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR
@@ -46,8 +45,14 @@ cl.enqueue_nd_range_kernel(queue, kernel, n_globals, n_locals)
 # Enqueue command to copy from buffer one to buffer two
 cl.enqueue_copy(queue, dest=buffer_two, src=buffer_one)
 
-# Enqueue command to copy from buffer two to host memory
-cl.enqueue_copy(queue, dest=result_array, src=buffer_two, is_blocking=True)
+# Enqueue command to map from buffer two to host memory
+# enqueue_map_buffer(queue, buf, flags, offset, shape, dtype, order="C", strides=None, wait_for=None, is_blocking=True)
+(result_array, _) = cl.enqueue_map_buffer(queue,
+                                          buf=buffer_two,
+                                          flags=cl.map_flags.READ,
+                                          offset=0,
+                                          shape=(100,),
+                                          dtype=np.float32)
 
 print('\nSource array:')
 print(data_two)
