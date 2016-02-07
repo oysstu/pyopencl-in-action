@@ -13,7 +13,7 @@ import utility
 # from os import environ
 # environ['PYOPENCL_COMPILER_OUTPUT'] = '1'
 
-scale_factor = 5
+SCALE_FACTOR = 5
 
 kernel_src = '''
 __constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP | CLK_FILTER_LINEAR;
@@ -49,12 +49,12 @@ __kernel void interp(read_only image2d_t src_image,
 # Get device and context, create command queue and program
 dev = utility.get_default_device()
 context = cl.Context(devices=[dev], properties=None, dev_type=None, cache_dir=None)
-queue = cl.CommandQueue(context, dev, properties=cl.command_queue_properties.PROFILING_ENABLE)
+queue = cl.CommandQueue(context, dev, properties=None)
 
 # Build program in the specified context using the kernel source code
 prog = cl.Program(context, kernel_src)
 try:
-    prog.build(options=['-Werror', '-DSCALE={}'.format(scale_factor)], devices=[dev], cache_dir=None)
+    prog.build(options=['-Werror', '-DSCALE={}'.format(SCALE_FACTOR)], devices=[dev], cache_dir=None)
 except:
     print('Build log:')
     print(prog.get_build_info(dev, cl.program_build_info.LOG))
@@ -62,7 +62,7 @@ except:
 
 # Data and buffers
 im_src = imread('input_car.png').astype(dtype=np.uint16)
-shape_dst = (im_src.shape[0]*scale_factor, im_src.shape[1]*scale_factor)
+shape_dst = (im_src.shape[0]*SCALE_FACTOR, im_src.shape[1]*SCALE_FACTOR)
 im_dst = np.empty(shape=shape_dst, dtype=np.uint16)
 
 src_buff = cl.image_from_array(context, im_src, mode='r')

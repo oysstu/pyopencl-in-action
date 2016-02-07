@@ -23,7 +23,7 @@ __kernel void mad_test(__global uint *result) {
 # Get device and context, create command queue and program
 dev = utility.get_default_device()
 context = cl.Context(devices=[dev], properties=None, dev_type=None, cache_dir=None)
-queue = cl.CommandQueue(context, dev, properties=cl.command_queue_properties.PROFILING_ENABLE)
+queue = cl.CommandQueue(context, dev, properties=None)
 
 # Build program in the specified context using the kernel source code
 prog = cl.Program(context, kernel_src)

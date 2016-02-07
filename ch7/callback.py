@@ -6,7 +6,6 @@ import numpy as np
 import pyopencl as cl
 import utility
 from time import sleep
-from platform import system
 
 kernel_src = '''
 __kernel void callback(__global float *buffer) {
@@ -21,7 +20,7 @@ __kernel void callback(__global float *buffer) {
 # Get device and context, create command queue and program
 dev = utility.get_default_device()
 context = cl.Context(devices=[dev], properties=None, dev_type=None, cache_dir=None)
-queue = cl.CommandQueue(context, dev)
+queue = cl.CommandQueue(context, dev, properties=None)
 
 # Build program in the specified context using the kernel source code
 prog = cl.Program(context, kernel_src)

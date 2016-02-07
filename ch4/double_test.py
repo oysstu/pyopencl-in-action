@@ -25,7 +25,7 @@ __kernel void double_test(__global float* a,
 # Get device and context, create command queue and program
 dev = utility.get_default_device()
 context = cl.Context(devices=[dev], properties=None, dev_type=None, cache_dir=None)
-queue = cl.CommandQueue(context, dev, properties=cl.command_queue_properties.PROFILING_ENABLE)
+queue = cl.CommandQueue(context, dev, properties=None)
 
 
 # Check for double floating point support

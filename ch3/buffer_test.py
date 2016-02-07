@@ -14,7 +14,7 @@ __kernel void blank(__global float *a) {
 # Get device, context and command queue
 dev = utility.get_default_device()
 context = cl.Context(devices=[dev], properties=None, dev_type=None, cache_dir=None)
-queue = cl.CommandQueue(context, dev, properties=cl.command_queue_properties.PROFILING_ENABLE)
+queue = cl.CommandQueue(context, dev, properties=None)
 
 # Program signatures
 # Program(context, src)
