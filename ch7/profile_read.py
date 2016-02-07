@@ -5,9 +5,7 @@ Listing 7.6: Profiling data transfer
 import numpy as np
 import pyopencl as cl
 import pyopencl.array
-
 import utility
-from time import sleep
 
 NUM_VECTORS = 8192
 NUM_ITERATIONS = 2000
