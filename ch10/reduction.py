@@ -1,4 +1,5 @@
 '''
+Combined example of the following listings
 Listing 10.2: Reduction using scalars
 Listing 10.3: Reduction using vectors
 '''
@@ -6,11 +7,12 @@ Listing 10.3: Reduction using vectors
 import numpy as np
 import pyopencl as cl
 import utility
+from string import Template
 
-# Note: The code assumes that the size of the array is divisible by the max work group size
-ARRAY_SIZE = 2**20
+ARRAY_SIZE = 2**20  # Note: The code assumes that the size of the array is divisible by the max work group size
+VECTOR_LENGTH = 4   # This changes the relevant memory sizes and substitutes the kernel vector types
 
-kernel_src = '''
+kernel_src = Template('''
 __kernel void reduction_scalar(__global float* data,
       __local float* partial_sums, __global float* output) {
 
@@ -32,9 +34,8 @@ __kernel void reduction_scalar(__global float* data,
    }
 }
 
-
-__kernel void reduction_vector(__global float4* data,
-      __local float4* partial_sums, __global float* output) {
+__kernel void reduction_vector(__global float$N* data,
+      __local float$N* partial_sums, __global float* output) {
 
    int lid = get_local_id(0);
    int group_size = get_local_size(0);
@@ -50,10 +51,10 @@ __kernel void reduction_vector(__global float4* data,
    }
 
    if(lid == 0) {
-      output[get_group_id(0)] = dot(partial_sums[0], (float4)(1.0f));
+      output[get_group_id(0)] = dot(partial_sums[0], (float$N)(1.0f));
    }
 }
-'''
+''').substitute(N=VECTOR_LENGTH)
 
 # Get device and context, create command queue and program
 dev = utility.get_default_device()
@@ -77,17 +78,22 @@ print('WG Max Size: ' + str(wg_max_size))
 print('Num groups: ' + str(num_groups))
 print('Local mem size: ' + str(dev.local_mem_size))
 
+# Print the preferred/native floatN lengths (which is optimal for the compiler/hardware, respectively)
+# Vectorization can still yield higher throughput even if preferred/native is 1, due to better use of memory bandwidth
+print('Preferred floatN size: ' + str(dev.preferred_vector_width_float))
+print('Preferred floatN size: ' + str(dev.native_vector_width_float))
+
 # Data and device buffers
 data = np.arange(start=0, stop=ARRAY_SIZE, dtype=np.float32)
 scalar_sum = np.zeros(shape=(num_groups,), dtype=np.float32)
-vector_sum = np.zeros(shape=(num_groups // 4,), dtype=np.float32)
+vector_sum = np.zeros(shape=(num_groups // VECTOR_LENGTH,), dtype=np.float32)
 
 data_buffer = cl.Buffer(context, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=data)
 scalar_sum_buffer = cl.Buffer(context, cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR, hostbuf=scalar_sum)
 vector_sum_buffer = cl.Buffer(context, cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR, hostbuf=vector_sum)
 
 scalar_local_mem = cl.LocalMemory(wg_max_size * np.dtype(np.float32).itemsize)
-vector_local_mem = cl.LocalMemory(wg_max_size * np.dtype(np.float32).itemsize * 4)
+vector_local_mem = cl.LocalMemory(wg_max_size * np.dtype(np.float32).itemsize * VECTOR_LENGTH)
 
 # Execute kernels and copy results
 local_size = (wg_max_size,)
@@ -103,7 +109,7 @@ scalar_time = scalar_event.profile.end - scalar_event.profile.start
 del scalar_local_mem, scalar_sum_buffer, scalar_event
 
 # Vector kernel
-global_size = (ARRAY_SIZE // 4,)
+global_size = (ARRAY_SIZE // VECTOR_LENGTH,)
 vector_event = prog.reduction_vector(queue, global_size, local_size, data_buffer, vector_local_mem, vector_sum_buffer)
 cl.enqueue_copy(queue, dest=vector_sum, src=vector_sum_buffer, is_blocking=True)
 
@@ -118,4 +124,3 @@ print('Vector sum: ' + str(vector_sum.sum()))
 
 print('\nScalar time (ms): ' + str(scalar_time/1000))
 print('Vector time (ms): ' + str(vector_time/1000))
-
