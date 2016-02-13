@@ -93,7 +93,7 @@ partial_sums = cl.LocalMemory(wg_max_size * np.dtype(np.float32).itemsize * VECT
 local_size = wg_max_size
 global_size = ARRAY_SIZE // VECTOR_LENGTH
 start_event = prog.reduction_vector(queue, (global_size,), (local_size,), data_buffer, partial_sums)
-print('Global size: ' + str(global_size))
+print('\nGlobal size: ' + str(global_size))
 
 # Perform successive stages of reduction
 while global_size // local_size > local_size:
@@ -101,18 +101,20 @@ while global_size // local_size > local_size:
     prog.reduction_vector(queue, (global_size,), (local_size,), data_buffer, partial_sums)
     print('Global size: ' + str(global_size))
 
+# Perform final reduction when the workload fits within a single work group
+# The local size is then set equal to the global size
 global_size = global_size // local_size
 print('Global size: ' + str(global_size))
-end_event = prog.reduction_complete(queue, (global_size,), None, data_buffer, partial_sums, sum_buffer)
+end_event = prog.reduction_complete(queue, (global_size,), (global_size,), data_buffer, partial_sums, sum_buffer)
 queue.finish()
 
-print('Total time (ms): ' + str((end_event.profile.end - start_event.profile.start)/1000))
+print('\nTotal time (ms): ' + str((end_event.profile.end - start_event.profile.start)/1000))
 
 cl.enqueue_copy(queue, dest=result, src=sum_buffer, is_blocking=True)
 
 actual_sum = np.float32(ARRAY_SIZE/2*(ARRAY_SIZE-1))
 
-print('\nActual sum: ' + str(actual_sum))
+print('Actual sum: ' + str(actual_sum))
 print('Computed sum: ' + str(result[0]))
 
 
