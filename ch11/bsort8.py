@@ -7,8 +7,7 @@ import numpy as np
 import pyopencl as cl
 import utility
 
-ASCENDING = 0
-DESCENDING = -1
+sort_ascending = True
 
 kernel_src = '''
 #define UP 0
@@ -85,7 +84,7 @@ data_buffer = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=data)
 local_size = (1,)
 global_size = (1,)
 
-start_event = prog.bsort8(queue, global_size, local_size, data_buffer, np.int32(ASCENDING))
+start_event = prog.bsort8(queue, global_size, local_size, data_buffer, np.int32(0 if sort_ascending else -1))
 
 cl.enqueue_copy(queue, dest=data, src=data_buffer, is_blocking=True)
 
