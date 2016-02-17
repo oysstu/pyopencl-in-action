@@ -2,10 +2,10 @@
 Listing 14.1: The discrete Fourier transform (for real numbers)
 """
 
-from io import open
 import numpy as np
 import pyopencl as cl
 import utility
+import matplotlib.pyplot as plt
 
 NUM_POINTS = 2 ** 8
 
@@ -76,21 +76,58 @@ input_data[:NUM_POINTS // 4] = 1.0
 mf = cl.mem_flags
 data_buffer = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=input_data)
 
-# Execute kernel
+# Execute kernel and copy result
 # rdft(__global float *x)
 global_size = (NUM_POINTS // 2 + 1,)
 local_size = None
-
 prog.rdft(queue, global_size, local_size, data_buffer)
 
 cl.enqueue_copy(queue, dest=output_data, src=data_buffer, is_blocking=True)
 
-cl_fft = output_data[::2] + 1j * output_data[1::2]
+# Change to array of complex values
+f_first = np.array([output_data[0] + 0j])  # X[0] is the DC signal (no im. component)
+f_last = np.array([output_data[1] + 0j])   # X[1] is the N/2 frequency
+
+cl_fft = output_data[2::2] + 1j * output_data[3::2]  # From there, real and im. alternates
+# The final result is assembled by concatenating f0, f1 : fN/2-1, fN/2 and the conjugate of f1:fN/2-1
+cl_fft = np.concatenate((f_first, cl_fft, f_last, np.conj(cl_fft[::-1])))
+
 np_fft = np.fft.fft(input_data)
 
 # Print first ten complex values
 np.set_printoptions(precision=4, suppress=True)
-print('CL FFT:')
+print('CL FFT [0:10]:')
 print(cl_fft[:10])
-print('\nNumpy FFT:')
+print('\nNumpy FFT [0:10]:')
 print(np_fft[:10])
+
+# Visualize result
+cl_magnitude = np.absolute(cl_fft)
+np_magnitude = np.absolute(np_fft)
+
+# Before calculating the phase, frequencies of low magnitude should be set to zero
+# This is due to numerical inaccuracies
+cl_fft[cl_magnitude < 0.0001] = 0.0 + 0.0j
+cl_phase = np.angle(cl_fft)
+np_phase = np.angle(np_fft)
+k = np.arange(0, NUM_POINTS)
+
+f, axes = plt.subplots(4, sharex=True)
+axes[0].set_title('Re')
+axes[0].plot(k, np.real(cl_fft), label='OpenCL')
+axes[0].plot(k, np.real(np_fft), label='Numpy')
+axes[0].legend()
+axes[1].set_title('Im')
+axes[1].plot(k, np.imag(cl_fft), label='OpenCL')
+axes[1].plot(k, np.imag(np_fft), label='Numpy')
+axes[2].set_title('Magnitude')
+axes[2].plot(k, cl_magnitude, label='OpenCL')
+axes[2].plot(k, np_magnitude, label='Numpy')
+axes[3].set_title('Phase')
+axes[3].plot(k, cl_phase, label='OpenCL')
+axes[3].plot(k, np_phase, label='Numpy')
+
+[ax.locator_params(nbins=2, axis='y') for ax in axes]
+plt.xlim([0, NUM_POINTS-1])
+plt.show()
+
