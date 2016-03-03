@@ -8,7 +8,7 @@ import utility
 import matplotlib.pyplot as plt
 
 NUM_POINTS = 2 ** 16
-FORWARD_FFT = False  # False if inverse FFT
+FORWARD_FFT = True  # False if inverse FFT
 
 kernel_src = '''
 #define mask_left fft_index
@@ -198,10 +198,10 @@ local_buffer = cl.LocalMemory(local_mem_size)
 
 # Initial kernel
 # fft_init(__global float2* g_data, __local float2* l_data, uint points_per_group, uint size, int dir)
-init_kernel = prog.fft_init
+kernel_init = prog.fft_init
 
 # Determine maximum work-group size
-kernel_wg_size = init_kernel.get_work_group_info(cl.kernel_work_group_info.WORK_GROUP_SIZE, dev)
+kernel_wg_size = kernel_init.get_work_group_info(cl.kernel_work_group_info.WORK_GROUP_SIZE, dev)
 local_size = 2 ** np.trunc(np.log2(kernel_wg_size)).astype(np.int32)
 
 # Kernel parameters
@@ -215,12 +215,18 @@ global_size = (NUM_POINTS // points_per_group)*local_size
 print('Global size: ' + str(global_size))
 print('Local size\n: ' + str(local_size))
 
-prog.fft_init(queue, (global_size,), (local_size,),
-              data_buffer,
-              local_buffer,
-              points_per_group,
-              np.uint32(NUM_POINTS),
-              direction)
+kernel_init(queue, (global_size,), (local_size,),
+            data_buffer,
+            local_buffer,
+            points_per_group,
+            np.uint32(NUM_POINTS),
+            direction)
+
+
+# There is some overhead involved with spawning a new kernel (code caching)
+# A good rule of thumb is therefore to create the kernel object outside of loops
+# Ref: https://lists.tiker.net/pipermail/pyopencl/2016-February/002107.html
+kernel_stage = prog.fft_stage
 
 # Enqueue further stages of the FFT
 if NUM_POINTS > points_per_group:
@@ -228,11 +234,11 @@ if NUM_POINTS > points_per_group:
     for stage in utility.range_bitwise_shift(low=2, high=NUM_POINTS//points_per_group + 1, n=1):
         print('Stage: ' + str(stage))
         # fft_stage(__global float2* g_data, uint stage, uint points_per_group, int dir)
-        prog.fft_stage(queue, (global_size,), (local_size,),
-                       data_buffer,
-                       np.uint32(stage),
-                       points_per_group,
-                       direction)
+        kernel_stage(queue, (global_size,), (local_size,),
+                     data_buffer,
+                     np.uint32(stage),
+                     points_per_group,
+                     direction)
 
 # Scale values if performing the inverse FFT
 if not FORWARD_FFT:

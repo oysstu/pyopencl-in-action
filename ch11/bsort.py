@@ -311,22 +311,29 @@ local_size = (local_size,)
 # bsort_init(__global float4 *g_data, __local float4 *l_data)
 prog.bsort_init(queue, global_size, local_size, data_buffer, local_buffer)
 
+# There is some overhead involved with spawning a new kernel (code caching)
+# A good rule of thumb is therefore to create the kernel object outside of loops
+# Ref: https://lists.tiker.net/pipermail/pyopencl/2016-February/002107.html
+kernel_stage_n = prog.bsort_stage_n
+kernel_stage_0 = prog.bsort_stage_0
+kernel_merge = prog.bsort_merge
+
 # Enqueue further stages
 num_stages = global_size[0] // local_size[0]
 for high_stage in utility.range_bitwise_shift(low=2, high=num_stages, n=1):
 
     for stage in utility.range_bitwise_shift(low=1, high=high_stage, n=-1):
         # bsort_stage_n(__global float4 *g_data, __local float4 *l_data, uint stage, uint high_stage)
-        prog.bsort_stage_n(queue, global_size, local_size, data_buffer, local_buffer,
-                           np.int32(stage), np.int32(high_stage))
+        kernel_stage_n(queue, global_size, local_size, data_buffer, local_buffer,
+                       np.int32(stage), np.int32(high_stage))
 
     # bsort_stage_0(__global float4 *g_data, __local float4 *l_data, uint high_stage)
-    prog.bsort_stage_0(queue, global_size, local_size, data_buffer, local_buffer, np.int32(high_stage))
+    kernel_stage_0(queue, global_size, local_size, data_buffer, local_buffer, np.int32(high_stage))
 
 # Perform the bitonic merge
 for stage in utility.range_bitwise_shift(low=1, high=num_stages, n=-1):
     # bsort_merge(__global float4 *g_data, __local float4 *l_data, uint stage, int dir)
-    prog.bsort_merge(queue, global_size, local_size, data_buffer, local_buffer, np.int32(stage), direction)
+    kernel_merge(queue, global_size, local_size, data_buffer, local_buffer, np.int32(stage), direction)
 
 # bsort_merge_last(__global float4 *g_data, __local float4 *l_data, int dir)
 prog.bsort_merge_last(queue, global_size, local_size, data_buffer, local_buffer, direction)

@@ -95,10 +95,15 @@ global_size = ARRAY_SIZE // VECTOR_LENGTH
 start_event = prog.reduction_vector(queue, (global_size,), (local_size,), data_buffer, partial_sums)
 print('\nGlobal size: ' + str(global_size))
 
+# There is some overhead involved with spawning a new kernel (code caching)
+# A good rule of thumb is therefore to create the kernel object outside of loops
+# Ref: https://lists.tiker.net/pipermail/pyopencl/2016-February/002107.html
+kernel_reduction_vector = prog.reduction_vector
+
 # Perform successive stages of reduction
 while global_size // local_size > local_size:
     global_size = global_size // local_size
-    prog.reduction_vector(queue, (global_size,), (local_size,), data_buffer, partial_sums)
+    kernel_reduction_vector(queue, (global_size,), (local_size,), data_buffer, partial_sums)
     print('Global size: ' + str(global_size))
 
 # Perform final reduction when the workload fits within a single work group

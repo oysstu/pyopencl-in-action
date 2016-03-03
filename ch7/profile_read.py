@@ -45,12 +45,17 @@ c_buff = cl.Buffer(context, cl.mem_flags.WRITE_ONLY, size=c.nbytes)
 global_size = (1,)
 local_size = None
 
+# There is some overhead involved with spawning a new kernel (code caching)
+# A good rule of thumb is therefore to create the kernel object outside of loops
+# Ref: https://lists.tiker.net/pipermail/pyopencl/2016-February/002107.html
+kernel = prog.profile_read
+
 # Execute the kernel repeatedly using enqueue_read
 read_time = 0.0
 for i in range(NUM_ITERATIONS):
     # __call__(queue, global_size, local_size, *args, global_offset=None, wait_for=None, g_times_l=False)
     # Store kernel execution event (return value)
-    kernel_event = prog.profile_read(queue, global_size, local_size, c_buff, np.int32(NUM_VECTORS))
+    kernel_event = kernel(queue, global_size, local_size, c_buff, np.int32(NUM_VECTORS))
 
     # Enqueue command to copy from buffers to host memory
     # Store data transfer event (return value)
@@ -64,7 +69,7 @@ map_time = 0.0
 for i in range(NUM_ITERATIONS):
     # __call__(queue, global_size, local_size, *args, global_offset=None, wait_for=None, g_times_l=False)
     # Store kernel execution event (return value)
-    kernel_event = prog.profile_read(queue, global_size, local_size, c_buff, np.int32(NUM_VECTORS))
+    kernel_event = kernel(queue, global_size, local_size, c_buff, np.int32(NUM_VECTORS))
 
     # Enqueue command to map from buffer two to host memory
     (result_array, prof_event) = cl.enqueue_map_buffer(queue,

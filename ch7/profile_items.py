@@ -51,12 +51,17 @@ data_buff = cl.Buffer(context, cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_
 global_size = (NUM_ITEMS,)
 local_size = None
 
+# There is some overhead involved with spawning a new kernel (code caching)
+# A good rule of thumb is therefore to create the kernel object outside of loops
+# Ref: https://lists.tiker.net/pipermail/pyopencl/2016-February/002107.html
+kernel = prog.profile_items
+
 # Execute the kernel repeatedly using enqueue_read
 total_time = 0.0
 for i in range(NUM_ITERATIONS):
     # Enqueue kernel
     # __call__(queue, global_size, local_size, *args, global_offset=None, wait_for=None, g_times_l=False)
-    kernel_event = prog.profile_items(queue, global_size, local_size, data_buff, np.int32(NUM_INTS))
+    kernel_event = kernel(queue, global_size, local_size, data_buff, np.int32(NUM_INTS))
 
     # Finish processing the queue and get profiling information
     queue.finish()
