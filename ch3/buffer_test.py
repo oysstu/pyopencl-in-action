@@ -13,8 +13,8 @@ __kernel void blank(__global float *a) {
 
 # Get device, context and command queue
 dev = utility.get_default_device()
-context = cl.Context(devices=[dev], properties=None, dev_type=None, cache_dir=None)
-queue = cl.CommandQueue(context, dev, properties=None)
+context = cl.Context(devices=[dev])
+queue = cl.CommandQueue(context, dev)
 
 # Program signatures
 # Program(context, src)
@@ -22,7 +22,7 @@ queue = cl.CommandQueue(context, dev, properties=None)
 prog = cl.Program(context, kernel_src)
 
 try:
-    prog.build(options=['-Werror'], devices=[dev], cache_dir=None)
+    prog.build(options=['-Werror'], devices=[dev])
 except:
     print('Build log:')
     print(prog.get_build_info(dev, cl.program_build_info.LOG))

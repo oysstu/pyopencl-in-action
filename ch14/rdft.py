@@ -51,13 +51,13 @@ __kernel void rdft(__global float *x) {
 
 # Get device and context, create command queue and program
 dev = utility.get_default_device()
-context = cl.Context(devices=[dev], properties=None, dev_type=None, cache_dir=None)
-queue = cl.CommandQueue(context, dev, properties=None)
+context = cl.Context(devices=[dev])
+queue = cl.CommandQueue(context, dev)
 
 # Build program in the specified context using the kernel source code
 prog = cl.Program(context, kernel_src)
 try:
-    prog.build(options=['-Werror'], devices=[dev], cache_dir=None)
+    prog.build(options=['-Werror'], devices=[dev])
 except:
     print('Build log:')
     print(prog.get_build_info(dev, cl.program_build_info.LOG))

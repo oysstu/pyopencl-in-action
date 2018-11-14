@@ -30,8 +30,8 @@ __kernel void mutex(__global int *mutex, __global int *sum) {
 
 # Get device and context, create command queue and program
 dev = utility.get_default_device(use_gpu=False)
-context = cl.Context(devices=[dev], properties=None, dev_type=None, cache_dir=None)
-queue = cl.CommandQueue(context, dev, properties=None)
+context = cl.Context(devices=[dev])
+queue = cl.CommandQueue(context, dev)
 
 # Check for cl_khr_global_int32_base_atomics availability
 if 'cl_khr_global_int32_base_atomics' not in dev.extensions.strip().split(' '):
@@ -40,7 +40,7 @@ if 'cl_khr_global_int32_base_atomics' not in dev.extensions.strip().split(' '):
 # Build program in the specified context using the kernel source code
 prog = cl.Program(context, kernel_src)
 try:
-    prog.build(options=['-Werror'], devices=[dev], cache_dir=None)
+    prog.build(options=['-Werror'], devices=[dev])
 except:
     print('Build log:')
     print(prog.get_build_info(dev, cl.program_build_info.LOG))

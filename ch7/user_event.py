@@ -16,7 +16,7 @@ __kernel void user_event(__global float4 *v) {
 
 # Get device and context, create command queue and program
 dev = utility.get_default_device()
-context = cl.Context(devices=[dev], properties=None, dev_type=None, cache_dir=None)
+context = cl.Context(devices=[dev])
 
 # Create command queue with out of order execution enabled
 queue = cl.CommandQueue(context, dev, properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
@@ -24,7 +24,7 @@ queue = cl.CommandQueue(context, dev, properties=cl.command_queue_properties.OUT
 # Build program in the specified context using the kernel source code
 prog = cl.Program(context, kernel_src)
 try:
-    prog.build(options=['-Werror'], devices=[dev], cache_dir=None)
+    prog.build(options=['-Werror'], devices=[dev])
 except:
     print('Build log:')
     print(prog.get_build_info(dev, cl.program_build_info.LOG))

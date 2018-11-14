@@ -27,7 +27,7 @@ __kernel void profile_items(__global int4 *x, int num_ints) {
 
 # Get device and context, create command queue and program
 dev = utility.get_default_device()
-context = cl.Context(devices=[dev], properties=None, dev_type=None, cache_dir=None)
+context = cl.Context(devices=[dev])
 
 # Create a command queue with the profiling flag enabled
 queue = cl.CommandQueue(context, dev, properties=cl.command_queue_properties.PROFILING_ENABLE)
@@ -35,7 +35,7 @@ queue = cl.CommandQueue(context, dev, properties=cl.command_queue_properties.PRO
 # Build program in the specified context using the kernel source code
 prog = cl.Program(context, kernel_src)
 try:
-    prog.build(options=['-Werror'], devices=[dev], cache_dir=None)
+    prog.build(options=['-Werror'], devices=[dev])
 except:
     print('Build log:')
     print(prog.get_build_info(dev, cl.program_build_info.LOG))
