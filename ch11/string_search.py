@@ -2,7 +2,7 @@
 Listing 11.1: Implementing MapReduce in OpenCL (vectorized string searching)
 '''
 
-from io import open
+import os
 import numpy as np
 import pyopencl as cl
 import utility
@@ -81,10 +81,11 @@ except:
     raise
 
 # Data and device buffers
-with open(TEXT_FILE, 'r') as f:
-    text = np.fromstring(f.read(), dtype=np.uint8)
+text_dir = os.path.split(os.path.realpath(__file__))[0]
+with open(os.path.join(text_dir, TEXT_FILE), 'rb') as f:
+    text = np.frombuffer(f.read(), dtype=np.uint8)
 
-pattern = np.fromstring('thatwithhavefrom', dtype=np.uint8)
+pattern = np.frombuffer(b'thatwithhavefrom', dtype=np.uint8)
 result = np.zeros(shape=(4,), dtype=np.int32)
 
 mf = cl.mem_flags
