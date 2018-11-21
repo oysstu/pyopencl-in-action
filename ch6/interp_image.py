@@ -3,10 +3,11 @@ Listing 6.2: Image interpolation
 Note: The book uses nearest neighbour filtering, bilinear filtering is used here instead
 '''
 
+import os
 import numpy as np
 import pyopencl as cl
 import matplotlib.pyplot as plt
-from skimage.io import imread
+from imageio import imread
 import utility
 
 # Note: This enables error output from the intel compiler if uncommented
@@ -61,7 +62,8 @@ except:
     raise
 
 # Data and buffers
-im_src = imread('input_car.png').astype(dtype=np.uint16)
+im_dir = os.path.split(os.path.realpath(__file__))[0]
+im_src = imread(os.path.join(im_dir, 'input_car.png')).astype(dtype=np.uint16)
 shape_dst = (im_src.shape[0]*SCALE_FACTOR, im_src.shape[1]*SCALE_FACTOR)
 im_dst = np.empty(shape=shape_dst, dtype=np.uint16)
 
